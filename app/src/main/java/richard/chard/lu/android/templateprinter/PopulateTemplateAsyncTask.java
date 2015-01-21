@@ -3,7 +3,6 @@ package richard.chard.lu.android.templateprinter;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.util.Pair;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -18,7 +17,7 @@ import java.util.zip.ZipOutputStream;
 /**
  * @author Richard Lu
  */
-public class PopulateTemplateAsyncTask extends AsyncTask<Object, Void, Pair<File, PopulateTemplateAsyncTask.PopulateListener>> {
+public class PopulateTemplateAsyncTask extends AsyncTask<Void, Void, File> {
 
     public interface PopulateListener {
 
@@ -29,45 +28,65 @@ public class PopulateTemplateAsyncTask extends AsyncTask<Object, Void, Pair<File
     private static final int BUFFER_SIZE = 1024;
     private static final String CONTENT_FILE_NAME = "content.xml";
 
+    private static final Logger LOG = Logger.create(PopulateTemplateAsyncTask.class);
+
+    private final File input;
+    private final File outputFolder;
+    private final Bundle values;
+    private final PopulateListener listener;
+
+    public PopulateTemplateAsyncTask(File input, File outputFolder, Bundle values, PopulateListener listener) {
+        LOG.trace("Entry, input={}, values={}",
+                input,
+                values
+        );
+
+        this.input = input;
+        this.outputFolder = outputFolder;
+        this.values = values;
+        this.listener = listener;
+
+        LOG.trace("Exit");
+    }
+
     @Override
-    protected Pair<File, PopulateListener> doInBackground(Object... params) {
+    protected File doInBackground(Void... params) {
+        LOG.trace("Entry");
 
-        File input = (File) params[0];
-        Bundle values = (Bundle) params[1];
-        PopulateListener listener = (PopulateListener) params[2];
-
-        Pair<File, PopulateListener> result;
+        File result;
 
         try {
-            result = new Pair<>(
-                    populate(input, values),
-                    listener
-            );
+            result = populate(input, values);
         } catch (IOException ioe) {
+            // TODO: handle more elegantly?
             throw new RuntimeException(ioe);
         }
 
+        LOG.trace("Exit");
         return result;
     }
 
     @Override
-    protected void onPostExecute(Pair<File, PopulateListener> result) {
+    protected void onPostExecute(File result) {
+        LOG.trace("Entry");
 
-        result.second.onFinished(result.first);
+        listener.onFinished(result);
 
+        LOG.trace("Exit");
     }
 
     // http://isip-blog.blogspot.com/2010/04/extracting-xml-files-from-odt-file-in.html
     // http://stackoverflow.com/questions/11502260/modifying-a-text-file-in-a-zip-archive-in-java
-    private static File populate(File input, Bundle values) throws IOException {
+    private File populate(File input, Bundle values) throws IOException {
+        LOG.trace("Entry");
 
         File output;
 
         if (input.getName().endsWith(".odt")) {
 
-            String inputName = input.getName().substring(0, input.getName().length() - 4);
+            String inputName = input.getName().substring(0, input.getName().lastIndexOf('.'));
 
-            output = new File(inputName + "-out.odt");
+            output = new File(outputFolder, inputName + "-out.odt");
 
             ZipFile file = new ZipFile(input);
             Enumeration entries = file.entries();
@@ -84,6 +103,7 @@ public class PopulateTemplateAsyncTask extends AsyncTask<Object, Void, Pair<File
 
                 outputStream.putNextEntry(new ZipEntry(entry.getName()));
 
+                // TODO: buffer cuts off in middle of attr?
                 if (entry.getName().equals(CONTENT_FILE_NAME)) {
                     while ((length = inputStream.read(buffer)) > 0) {
                         String text = new String(Arrays.copyOf(buffer, length));
@@ -111,10 +131,14 @@ public class PopulateTemplateAsyncTask extends AsyncTask<Object, Void, Pair<File
             throw new RuntimeException("Not an ODT file");
         }
 
+        LOG.trace("Exit");
         return output;
     }
 
     private static String replace(String input, Bundle values) {
+        LOG.trace("Entry");
+
+        // TODO: check well-formed
 
         String[] tokens = input.split("(\\{{2})|(\\}{2})");
 
@@ -128,6 +152,8 @@ public class PopulateTemplateAsyncTask extends AsyncTask<Object, Void, Pair<File
             }
         }
 
-        return TextUtils.join("", tokens);
+        String result = TextUtils.join("", tokens);
+        LOG.trace("Exit");
+        return result;
     }
 }
