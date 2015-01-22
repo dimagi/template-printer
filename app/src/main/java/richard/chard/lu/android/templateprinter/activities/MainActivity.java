@@ -43,6 +43,10 @@ public class MainActivity extends Activity
             "TemplatePrinter"
     );
 
+    static {
+        LOG.debug("OUTPUT_FOLDER={}", OUTPUT_FOLDER);
+    }
+
     private static final String PREFERENCE_KEY_TEMPLATE = "template_file_path";
 
     private static final int REQUEST_TEMPLATE = 0;
@@ -91,11 +95,11 @@ public class MainActivity extends Activity
                     );
 
                 } else {
-                    showToast(getString(R.string.not_odt_file));
+                    showToast(R.string.not_odt_file);
                 }
 
             } else {
-                showToast(getString(R.string.no_file_selected));
+                showToast(R.string.no_file_selected);
             }
 
         }
@@ -132,7 +136,7 @@ public class MainActivity extends Activity
                             data
                     );
                 } else {
-                    showErrorDialog(getString(R.string.no_data));
+                    showErrorDialog(R.string.no_data);
                 }
                 break;
         }
@@ -166,7 +170,7 @@ public class MainActivity extends Activity
 
             }
         } else {
-            showErrorDialog(getString(R.string.unable_to_create_output_folder));
+            showErrorDialog(R.string.unable_to_create_output_folder);
         }
 
         LOG.trace("Exit");
@@ -192,6 +196,10 @@ public class MainActivity extends Activity
         LOG.trace("Exit");
     }
 
+    private void showErrorDialog(int messageResId) {
+        showErrorDialog(getString(messageResId));
+    }
+
     /**
      * Displays an error dialog with the specified message.
      * Activity will quit upon exiting the dialog.
@@ -199,7 +207,7 @@ public class MainActivity extends Activity
      * @param message Error message
      */
     private void showErrorDialog(String message) {
-        LOG.trace("Entry");
+        LOG.trace("Entry, message={}", message);
 
         AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(this)
                 .setMessage(message)
@@ -214,12 +222,12 @@ public class MainActivity extends Activity
         LOG.trace("Exit");
     }
 
-    private void showToast(String message) {
+    private void showToast(int messageResId) {
         LOG.trace("Entry");
 
         Toast.makeText(
                 getApplicationContext(),
-                message,
+                getString(messageResId),
                 Toast.LENGTH_SHORT
         ).show();
 
@@ -294,7 +302,7 @@ public class MainActivity extends Activity
                     REQUEST_TEMPLATE
             );
         } catch (ActivityNotFoundException e) {
-            showErrorDialog(getString(R.string.file_browser_not_found));
+            showErrorDialog(R.string.file_browser_not_found);
         }
 
         LOG.trace("Exit");
@@ -305,12 +313,16 @@ public class MainActivity extends Activity
 
         File template = new File(templateFilePath);
 
-        new PopulateTemplateAsyncTask(
-                template,
-                OUTPUT_FOLDER,
-                data,
-                this
-        ).execute();
+        if (template.exists()) {
+            new PopulateTemplateAsyncTask(
+                    template,
+                    OUTPUT_FOLDER,
+                    data,
+                    this
+            ).execute();
+        } else {
+            showToast(R.string.template_does_not_exist);
+        }
 
         LOG.trace("Exit");
     }
