@@ -6,8 +6,9 @@
     <string name="none">None</string>
     <string name="not_odt_file">Not an ODT file</string>
     <string name="ok">OK</string>
-    <string name="populate_and_print">Populate &amp; Print</string>
-    <string name="select">Select</string>
+    <string name="populate_and_print">POPULATE &amp; PRINT</string>
+    <string name="select">SELECT</string>
     <string name="settings">Settings</string>
+    <string name="template_file">Template File</string>
     <string name="unable_to_create_output_folder">Unable to create output folder</string>
 </resources>
