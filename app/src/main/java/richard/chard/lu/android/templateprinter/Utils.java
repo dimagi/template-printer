@@ -12,6 +12,11 @@ public abstract class Utils {
 
     private static final Logger LOG = Logger.create(Utils.class);
 
+    /**
+     * Convert URI to absolute file path.
+     * @param uri File URI
+     * @return File path String
+     */
     public static String getFilePathFromUri(Uri uri) {
         LOG.trace("Entry, uri={}", uri);
 
@@ -21,18 +26,48 @@ public abstract class Utils {
         return result;
     }
 
+    /**
+     * Concatenate all Strings in a String array to one String.
+     *
+     * @param strings String array to join
+     * @return Joined String
+     */
     public static String join(String[] strings) {
         return TextUtils.join("", strings);
     }
 
+    /**
+     * Get the last element of a String array.
+     * @param strings String array
+     * @return Last element
+     */
     public static String last(String[] strings) {
         return strings[strings.length - 1];
     }
 
+    /**
+     * Remove all occurrences of the specified String segment
+     * from the input String.
+     *
+     * @param input String input to remove from
+     * @param toRemove String segment to remove
+     * @return input with all occurrences of toRemove removed
+     */
     public static String remove(String input, String toRemove) {
         return TextUtils.join("", input.split(toRemove));
     }
 
+    /**
+     * Split a String while keeping the specified start and end delimiters.
+     *
+     * Sources:
+     * http://stackoverflow.com/questions/2206378/how-to-split-a-string-but-also-keep-the-delimiters
+     *
+     * @param input String to split
+     * @param delimiterStart Start delimiter; will split immediately before this delimiter
+     * @param delimiterEnd End delimiter; will split immediately after this delimiter
+     * @return Split string array
+     */
     public static String[] splitKeepDelimiter(
             String input,
             String delimiterStart,

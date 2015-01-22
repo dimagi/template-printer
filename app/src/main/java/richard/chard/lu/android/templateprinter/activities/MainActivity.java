@@ -2,6 +2,7 @@ package richard.chard.lu.android.templateprinter.activities;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -191,6 +192,12 @@ public class MainActivity extends Activity
         LOG.trace("Exit");
     }
 
+    /**
+     * Displays an error dialog with the specified message.
+     * Activity will quit upon exiting the dialog.
+     *
+     * @param message Error message
+     */
     private void showErrorDialog(String message) {
         LOG.trace("Entry");
 
@@ -219,6 +226,13 @@ public class MainActivity extends Activity
         LOG.trace("Exit");
     }
 
+    /**
+     * Attempts to open the file with OpenDocument Reader.
+     * If ODR is unavailable, opens a dialog from which
+     * an ODT reader application can be selected.
+     *
+     * @param document ODT file to open
+     */
     private void startDocumentViewer(File document) {
         LOG.trace("Entry");
 
@@ -262,6 +276,10 @@ public class MainActivity extends Activity
         LOG.trace("Exit");
     }
 
+    /**
+     * Attempts to start the device's file browser.
+     * If unavailable, shows an error dialog.
+     */
     private void startFileBrowser() {
         LOG.trace("Entry");
 
@@ -270,10 +288,14 @@ public class MainActivity extends Activity
                 .setType("file/*")
                 .addCategory(Intent.CATEGORY_OPENABLE);
 
-        startActivityForResult(
-                chooseTemplateIntent,
-                REQUEST_TEMPLATE
-        );
+        try {
+            startActivityForResult(
+                    chooseTemplateIntent,
+                    REQUEST_TEMPLATE
+            );
+        } catch (ActivityNotFoundException e) {
+            showErrorDialog(getString(R.string.file_browser_not_found));
+        }
 
         LOG.trace("Exit");
     }

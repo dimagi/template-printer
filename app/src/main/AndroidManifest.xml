@@ -13,6 +13,7 @@
             android:name=".activities.MainActivity" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+                <!--TODO custom action-->
                 <action android:name="org.commcare.mwellcare.PRINTOUT_ACTION" />
 
                 <category android:name="android.intent.category.DEFAULT" />

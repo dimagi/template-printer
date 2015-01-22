@@ -14,6 +14,8 @@ import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
 /**
+ * Asynchronous task for populating an ODT file with data.
+ *
  * @author Richard Lu
  */
 public class PopulateTemplateAsyncTask extends AsyncTask<Void, Void, File> {
@@ -76,8 +78,19 @@ public class PopulateTemplateAsyncTask extends AsyncTask<Void, Void, File> {
         LOG.trace("Exit");
     }
 
-    // http://isip-blog.blogspot.com/2010/04/extracting-xml-files-from-odt-file-in.html
-    // http://stackoverflow.com/questions/11502260/modifying-a-text-file-in-a-zip-archive-in-java
+    /**
+     * Populate an input ODT file with attribute keys formatted as {{ attr_key }}
+     * with attribute values.
+     *
+     * Sources:
+     * http://isip-blog.blogspot.com/2010/04/extracting-xml-files-from-odt-file-in.html
+     * http://stackoverflow.com/questions/11502260/modifying-a-text-file-in-a-zip-archive-in-java
+     *
+     * @param input ODT file
+     * @param values Bundle of String attribute key-value mappings
+     * @return Populated ODT file
+     * @throws IOException
+     */
     private File populate(File input, Bundle values) throws IOException {
         LOG.trace("Entry");
 
@@ -85,8 +98,10 @@ public class PopulateTemplateAsyncTask extends AsyncTask<Void, Void, File> {
 
         if (input.getName().endsWith(".odt")) {
 
+            // Remove file extension
             String inputName = input.getName().substring(0, input.getName().lastIndexOf('.'));
 
+            // Append suffice and file extension to output file name
             output = new File(outputFolder, inputName + "-out.odt");
 
             ZipFile file = new ZipFile(input);
@@ -99,20 +114,22 @@ public class PopulateTemplateAsyncTask extends AsyncTask<Void, Void, File> {
                 ZipEntry entry = (ZipEntry) entries.nextElement();
 
                 InputStream inputStream = file.getInputStream(entry);
-                byte[] buffer = new byte[BUFFER_SIZE];
-                int length;
+
+                byte[] byteBuffer = new byte[BUFFER_SIZE];
+                int numBytesRead;
 
                 outputStream.putNextEntry(new ZipEntry(entry.getName()));
 
                 if (entry.getName().equals(CONTENT_FILE_NAME)) {
 
-                    // read entire file as String
+                    // Read entire file as String
                     String fileText = "";
 
-                    while ((length = inputStream.read(buffer)) > 0) {
-                        fileText += new String(Arrays.copyOf(buffer, length));
+                    while ((numBytesRead = inputStream.read(byteBuffer)) > 0) {
+                        fileText += new String(Arrays.copyOf(byteBuffer, numBytesRead));
                     }
 
+                    // Populate String
                     if (fileText.contains("{{")) {
                         fileText = replace(fileText, values);
                     }
@@ -123,14 +140,15 @@ public class PopulateTemplateAsyncTask extends AsyncTask<Void, Void, File> {
 
                 } else {
 
-                    // straight up copy file
-                    while ((length = inputStream.read(buffer)) > 0) {
-                        outputStream.write(buffer, 0, length);
+                    // Straight up copy file
+                    while ((numBytesRead = inputStream.read(byteBuffer)) > 0) {
+                        outputStream.write(byteBuffer, 0, numBytesRead);
                     }
 
                 }
 
                 outputStream.closeEntry();
+                inputStream.close();
 
             }
 
@@ -145,6 +163,13 @@ public class PopulateTemplateAsyncTask extends AsyncTask<Void, Void, File> {
         return output;
     }
 
+    /**
+     * Populate an input string with attribute keys formatted as {{ attr_key }}
+     * with attribute values.
+     * @param input String input
+     * @param values Bundle of String attribute key-value mappings
+     * @return The populated String
+     */
     private static String replace(String input, Bundle values) {
         LOG.trace("Entry");
 
@@ -179,25 +204,28 @@ public class PopulateTemplateAsyncTask extends AsyncTask<Void, Void, File> {
                         LOG.debug("key={}", key);
 
                         if (values.containsKey(key) && (key = values.getString(key)) != null) {
-                            // populate with value
+                            // Populate with value
                             tokenSplits[j] = key;
                         } else {
-                            // empty if not found
+                            // Empty if not found
                             tokenSplits[j] = "";
                         }
                     }
 
                 }
 
-                // remove {{ and }}
+                // Remove {{ and }}
                 tokenSplits[0] = "";
                 tokenSplits[tokenSplits.length-1] = "";
 
+                // Reconstruct token
                 tokens[i] = Utils.join(tokenSplits);
             }
         }
 
+        // Reconstruct input
         String result = Utils.join(tokens);
+
         LOG.trace("Exit");
         return result;
     }
