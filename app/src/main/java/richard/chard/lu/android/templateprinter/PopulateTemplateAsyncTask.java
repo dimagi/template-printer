@@ -173,7 +173,7 @@ public class PopulateTemplateAsyncTask extends AsyncTask<Void, Void, File> {
     private static String replace(String input, Bundle values) {
         LOG.trace("Entry");
 
-        // TODO: check well-formed
+        validateStringOrThrowException(input);
 
         // Split input into tokens bounded by {{ and }}
         String[] tokens = Utils.splitKeepDelimiter(input, "\\{{2}", "\\}{2}");
@@ -228,5 +228,65 @@ public class PopulateTemplateAsyncTask extends AsyncTask<Void, Void, File> {
 
         LOG.trace("Exit");
         return result;
+    }
+
+    private static void validateStringOrThrowException(String input) {
+        LOG.trace("Entry");
+
+        boolean isBetweenMustaches = false;
+        boolean isBetweenChevrons = false;
+        boolean isWellFormed = true;
+
+        for (int i=0; i<input.length(); i++) {
+            char c = input.charAt(i);
+
+            if (c == '{') {
+                if (isBetweenMustaches) {
+                    isWellFormed = false;
+                    break;
+                } else {
+                    i++;
+                    if (input.charAt(i) != '{') {
+                        isWellFormed = false;
+                        break;
+                    } else {
+                        isBetweenMustaches = true;
+                    }
+                }
+            } else if (c == '}') {
+                if (isBetweenMustaches) {
+                    i++;
+                    if (input.charAt(i) != '}') {
+                        isWellFormed = false;
+                        break;
+                    } else {
+                        isBetweenMustaches = false;
+                    }
+                } else {
+                    isWellFormed = false;
+                    break;
+                }
+            } else if (c == '<') {
+                if (isBetweenChevrons) {
+                    isWellFormed = false;
+                    break;
+                } else {
+                    isBetweenChevrons = true;
+                }
+            } else if (c == '>') {
+                if (isBetweenChevrons) {
+                    isBetweenChevrons = false;
+                } else {
+                    isWellFormed = false;
+                    break;
+                }
+            }
+        }
+
+        if (!isWellFormed) {
+            throw new RuntimeException("Ill-formed input string: " + input);
+        }
+
+        LOG.trace("Exit");
     }
 }
