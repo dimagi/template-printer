@@ -2,7 +2,6 @@ package richard.chard.lu.android.templateprinter;
 
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.text.TextUtils;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -21,6 +20,7 @@ public class PopulateTemplateAsyncTask extends AsyncTask<Void, Void, File> {
 
     public interface PopulateListener {
 
+        public void onError(String message);
         public void onFinished(File result);
 
     }
@@ -53,13 +53,12 @@ public class PopulateTemplateAsyncTask extends AsyncTask<Void, Void, File> {
     protected File doInBackground(Void... params) {
         LOG.trace("Entry");
 
-        File result;
+        File result = null;
 
         try {
             result = populate(input, values);
-        } catch (IOException ioe) {
-            // TODO: handle more elegantly?
-            throw new RuntimeException(ioe);
+        } catch (Exception e) {
+            listener.onError(e.getMessage());
         }
 
         LOG.trace("Exit");
@@ -70,7 +69,9 @@ public class PopulateTemplateAsyncTask extends AsyncTask<Void, Void, File> {
     protected void onPostExecute(File result) {
         LOG.trace("Entry");
 
-        listener.onFinished(result);
+        if (result != null) {
+            listener.onFinished(result);
+        }
 
         LOG.trace("Exit");
     }
@@ -103,21 +104,30 @@ public class PopulateTemplateAsyncTask extends AsyncTask<Void, Void, File> {
 
                 outputStream.putNextEntry(new ZipEntry(entry.getName()));
 
-                // TODO: buffer cuts off in middle of attr?
                 if (entry.getName().equals(CONTENT_FILE_NAME)) {
+
+                    // read entire file as String
+                    String fileText = "";
+
                     while ((length = inputStream.read(buffer)) > 0) {
-                        String text = new String(Arrays.copyOf(buffer, length));
-                        if (text.contains("{{")) {
-                            text = replace(text, values);
-                            outputStream.write(text.getBytes(), 0, text.getBytes().length);
-                        } else {
-                            outputStream.write(buffer, 0, length);
-                        }
+                        fileText += new String(Arrays.copyOf(buffer, length));
                     }
+
+                    if (fileText.contains("{{")) {
+                        fileText = replace(fileText, values);
+                    }
+
+                    byte[] fileTextBytes = fileText.getBytes();
+
+                    outputStream.write(fileTextBytes, 0, fileTextBytes.length);
+
                 } else {
+
+                    // straight up copy file
                     while ((length = inputStream.read(buffer)) > 0) {
                         outputStream.write(buffer, 0, length);
                     }
+
                 }
 
                 outputStream.closeEntry();
@@ -140,19 +150,54 @@ public class PopulateTemplateAsyncTask extends AsyncTask<Void, Void, File> {
 
         // TODO: check well-formed
 
-        String[] tokens = input.split("(\\{{2})|(\\}{2})");
+        // Split input into tokens bounded by {{ and }}
+        String[] tokens = Utils.splitKeepDelimiter(input, "\\{{2}", "\\}{2}");
 
-        // every 2nd token is a attribute formerly enclosed in {{ }}
-        for (int i=1; i<tokens.length; i+=2) {
-            String key = TextUtils.join("", tokens[i].split(" "));
-            if (values.containsKey(key) && (key = values.getString(key)) != null) {
-                tokens[i] = key;
-            } else {
-                tokens[i] = "{{" + tokens[i] + "}}";
+        for (int i=0; i<tokens.length; i++) {
+            String token = tokens[i];
+
+            LOG.debug("token={}", token);
+
+            // Every 2nd token is a attribute enclosed in {{ }}
+            if (i % 2 == 1) {
+
+                // Split token into tokenSplits bounded by < and >
+                String[] tokenSplits = Utils.splitKeepDelimiter(token, "<|(\\}{2})", ">|(\\{{2})");
+
+                // First and last tokenSplits are {{ and }}
+                for (int j=1; j<tokenSplits.length-1; j++) {
+                    String tokenSplit = tokenSplits[j];
+
+                    LOG.debug("tokenSplit={}", tokenSplit);
+
+                    // tokenSplit is key or whitespace
+                    if (!tokenSplit.startsWith("<")) {
+
+                        // Remove whitespace from key
+                        String key = Utils.remove(tokenSplit, " ");
+
+                        LOG.debug("key={}", key);
+
+                        if (values.containsKey(key) && (key = values.getString(key)) != null) {
+                            // populate with value
+                            tokenSplits[j] = key;
+                        } else {
+                            // empty if not found
+                            tokenSplits[j] = "";
+                        }
+                    }
+
+                }
+
+                // remove {{ and }}
+                tokenSplits[0] = "";
+                tokenSplits[tokenSplits.length-1] = "";
+
+                tokens[i] = Utils.join(tokenSplits);
             }
         }
 
-        String result = TextUtils.join("", tokens);
+        String result = Utils.join(tokens);
         LOG.trace("Exit");
         return result;
     }

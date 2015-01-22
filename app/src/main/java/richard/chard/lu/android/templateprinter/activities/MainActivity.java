@@ -31,20 +31,6 @@ public class MainActivity extends Activity
         implements PopulateTemplateAsyncTask.PopulateListener, DialogInterface.OnClickListener,
         View.OnClickListener {
 
-    private static final Bundle DEMO_BUNDLE = new Bundle();
-
-    static {
-        DEMO_BUNDLE.putString("chc_name", "Gownipalli");
-        DEMO_BUNDLE.putString("date", "20 January 2015");
-        DEMO_BUNDLE.putString("patient_name", "Lakshmi Pramanik");
-        DEMO_BUNDLE.putString("patient_address", "4/24 Srinivasapura, Kolar, Karnataka - 111111");
-        DEMO_BUNDLE.putString("patient_gender", "female");
-        DEMO_BUNDLE.putString("patient_age", "46");
-        DEMO_BUNDLE.putString("patient_id", "011300101");
-        DEMO_BUNDLE.putString("patient_phone", "9876543210");
-        DEMO_BUNDLE.putString("patient_diagnosis", "Hypertension, Diabetes, CKD, Liver Failure, COPD/Asthma, CAD, Mi, PVD, Stroke");
-        DEMO_BUNDLE.putString("patient_drugs", "ACEi/ARB (1/2 dose), Sulfonyl, Urea, Fluoxetine 20 mg/day");
-    }
 
     private static final Logger LOG = Logger.create(MainActivity.class);
 
@@ -137,10 +123,16 @@ public class MainActivity extends Activity
 
             case R.id.button_populate:
 
-                startPopulateTask(
-                        templateFilePath,
-                        DEMO_BUNDLE
-                );
+                Bundle data = getIntent().getExtras();
+
+                if (data != null) {
+                    startPopulateTask(
+                            templateFilePath,
+                            data
+                    );
+                } else {
+                    showErrorDialog(getString(R.string.no_data));
+                }
                 break;
         }
 
@@ -175,6 +167,15 @@ public class MainActivity extends Activity
         } else {
             showErrorDialog(getString(R.string.unable_to_create_output_folder));
         }
+
+        LOG.trace("Exit");
+    }
+
+    @Override
+    public void onError(String message) {
+        LOG.trace("Entry, message={}", message);
+
+        showErrorDialog(message);
 
         LOG.trace("Exit");
     }

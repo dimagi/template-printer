@@ -1,6 +1,7 @@
 <resources>
     <string name="actions">Actions</string>
     <string name="app_name">Template Printer</string>
+    <string name="no_data">No data!</string>
     <string name="no_file_selected">No file selected</string>
     <string name="none">None</string>
     <string name="not_odt_file">Not an ODT file</string>
