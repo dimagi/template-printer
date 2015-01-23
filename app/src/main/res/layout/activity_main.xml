@@ -19,15 +19,10 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textStyle="italic"
-            android:textSize="16sp"
+            style="@style/SubHeader"
             android:text="@string/template_file" />
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_marginBottom="@dimen/margin"
-            android:background="@color/accent_material_dark" />
+        <include layout="@layout/divider_horizontal" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -39,8 +34,7 @@
                 android:layout_weight="1"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:textSize="20sp"
-                android:gravity="center"
+                style="@style/SettingText"
                 android:text="@string/none" />
 
             <Button
@@ -48,7 +42,7 @@
                 android:layout_weight="1"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:background="@drawable/button_gray_statelist"
+                style="@style/SettingButton"
                 android:text="@string/select" />
 
         </LinearLayout>
@@ -56,15 +50,10 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textStyle="italic"
-            android:textSize="16sp"
+            style="@style/SubHeader"
             android:text="@string/output_folder" />
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_marginBottom="@dimen/margin"
-            android:background="@color/accent_material_dark" />
+        <include layout="@layout/divider_horizontal" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -76,8 +65,7 @@
                 android:layout_weight="1"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:textSize="20sp"
-                android:gravity="center"
+                style="@style/SettingText"
                 android:text="@string/none" />
 
             <Button
@@ -85,7 +73,7 @@
                 android:layout_weight="1"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:background="@drawable/button_gray_statelist"
+                style="@style/SettingButton"
                 android:text="@string/select" />
 
         </LinearLayout>
