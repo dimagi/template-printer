@@ -4,9 +4,12 @@
     <string name="file_browser_not_found">File browser not found</string>
     <string name="no_data">No data!</string>
     <string name="no_file_selected">No file selected</string>
+    <string name="no_folder_selected">No folder selected</string>
     <string name="none">None</string>
+    <string name="not_a_folder">Not a folder!</string>
     <string name="not_odt_file">Not an ODT file</string>
     <string name="ok">OK</string>
+    <string name="output_folder">Output Folder</string>
     <string name="populate_and_print">POPULATE &amp; PRINT</string>
     <string name="select">SELECT</string>
     <string name="settings">Settings</string>

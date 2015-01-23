@@ -11,7 +11,6 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -35,23 +34,15 @@ public class MainActivity extends Activity
 
     private static final Logger LOG = Logger.create(MainActivity.class);
 
-    // TODO: no downloads folder?
-    private static final File OUTPUT_FOLDER = new File(
-            Environment.getExternalStoragePublicDirectory(
-                    Environment.DIRECTORY_DOWNLOADS
-            ),
-            "TemplatePrinter"
-    );
-
-    static {
-        LOG.debug("OUTPUT_FOLDER={}", OUTPUT_FOLDER);
-    }
-
+    private static final String PREFERENCE_KEY_OUTPUT = "output_folder_path";
     private static final String PREFERENCE_KEY_TEMPLATE = "template_file_path";
 
-    private static final int REQUEST_TEMPLATE = 0;
+    private static final int REQUEST_OUTPUT = 0;
+    private static final int REQUEST_TEMPLATE = 1;
 
     private static final String DOCUMENT_VIEWER_PACKAGE = "at.tomtasche.reader";
+
+    private String outputFolderPath;
 
     private SharedPreferences preferences;
 
@@ -71,12 +62,6 @@ public class MainActivity extends Activity
 
                 Uri uri = data.getData();
 
-                LOG.debug("data.getDataString()={}", data.getDataString());
-
-                LOG.debug("uri.toString()={}", uri.toString());
-
-                LOG.debug("uri.getPath()={}", uri.getPath());
-
                 if (uri.getPath().endsWith(".odt")) {
 
                     templateFilePath = uri.getPath();
@@ -87,8 +72,6 @@ public class MainActivity extends Activity
                                     templateFilePath
                             )
                             .apply();
-
-                    findViewById(R.id.button_populate).setEnabled(true);
 
                     ((TextView) findViewById(R.id.textview_template)).setText(
                             Utils.last(templateFilePath.split("/"))
@@ -101,6 +84,42 @@ public class MainActivity extends Activity
             } else {
                 showToast(R.string.no_file_selected);
             }
+
+        } else if (requestCode == REQUEST_OUTPUT) {
+
+            if (resultCode == RESULT_OK
+                    && data != null) {
+
+                Uri uri = data.getData();
+
+                if (new File(uri.getPath()).isDirectory()) {
+
+                    outputFolderPath = uri.getPath();
+
+                    preferences.edit()
+                            .putString(
+                                    PREFERENCE_KEY_OUTPUT,
+                                    outputFolderPath
+                            )
+                            .apply();
+
+                    ((TextView) findViewById(R.id.textview_output)).setText(
+                            Utils.last(outputFolderPath.split("/"))
+                    );
+
+                } else {
+                    showToast(R.string.not_a_folder);
+                }
+
+            } else {
+                showToast(R.string.no_folder_selected);
+            }
+
+        }
+
+        if (templateFilePath != null && outputFolderPath != null) {
+
+            findViewById(R.id.button_populate).setEnabled(true);
 
         }
 
@@ -123,7 +142,12 @@ public class MainActivity extends Activity
         switch (view.getId()) {
             case R.id.button_template:
 
-                startFileBrowser();
+                startFileBrowser(false);
+                break;
+
+            case R.id.button_output:
+
+                startFileBrowser(true);
                 break;
 
             case R.id.button_populate:
@@ -131,10 +155,7 @@ public class MainActivity extends Activity
                 Bundle data = getIntent().getExtras();
 
                 if (data != null) {
-                    startPopulateTask(
-                            templateFilePath,
-                            data
-                    );
+                    startPopulateTask(data);
                 } else {
                     showErrorDialog(R.string.no_data);
                 }
@@ -150,27 +171,35 @@ public class MainActivity extends Activity
 
         super.onCreate(savedInstanceState);
 
-        if (OUTPUT_FOLDER.mkdirs() || OUTPUT_FOLDER.isDirectory()) {
-            preferences= getPreferences(MODE_PRIVATE);
+        preferences= getPreferences(MODE_PRIVATE);
 
-            templateFilePath = preferences.getString(PREFERENCE_KEY_TEMPLATE, null);
+        outputFolderPath = preferences.getString(PREFERENCE_KEY_OUTPUT, null);
+        templateFilePath = preferences.getString(PREFERENCE_KEY_TEMPLATE, null);
 
-            setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_main);
 
-            findViewById(R.id.button_template).setOnClickListener(this);
-            findViewById(R.id.button_populate).setOnClickListener(this);
+        findViewById(R.id.button_template).setOnClickListener(this);
+        findViewById(R.id.button_output).setOnClickListener(this);
+        findViewById(R.id.button_populate).setOnClickListener(this);
 
-            if (templateFilePath != null) {
+        if (templateFilePath != null) {
 
-                findViewById(R.id.button_populate).setEnabled(true);
+            ((TextView) findViewById(R.id.textview_template)).setText(
+                    Utils.last(templateFilePath.split("/"))
+            );
 
-                ((TextView) findViewById(R.id.textview_template)).setText(
-                        Utils.last(templateFilePath.split("/"))
-                );
+        }
+        if (outputFolderPath != null) {
 
-            }
-        } else {
-            showErrorDialog(R.string.unable_to_create_output_folder);
+            ((TextView) findViewById(R.id.textview_output)).setText(
+                    Utils.last(outputFolderPath.split("/"))
+            );
+
+        }
+        if (templateFilePath != null && outputFolderPath != null) {
+
+            findViewById(R.id.button_populate).setEnabled(true);
+
         }
 
         LOG.trace("Exit");
@@ -285,9 +314,9 @@ public class MainActivity extends Activity
     }
 
     /**
-     * Starts the file browser.
+     * Starts the file/folder picker.
      */
-    private void startFileBrowser() {
+    private void startFileBrowser(boolean folder) {
         LOG.trace("Entry");
 
         Intent chooseTemplateIntent = new Intent(
@@ -301,29 +330,38 @@ public class MainActivity extends Activity
                 false
         ).putExtra(
                 FilePickerActivity.EXTRA_MODE,
-                FilePickerActivity.MODE_FILE
+                folder ? FilePickerActivity.MODE_DIR : FilePickerActivity.MODE_FILE
         );
 
         startActivityForResult(
                 chooseTemplateIntent,
-                REQUEST_TEMPLATE
+                folder ? REQUEST_OUTPUT : REQUEST_TEMPLATE
         );
 
         LOG.trace("Exit");
     }
 
-    private void startPopulateTask(String templateFilePath, Bundle data) {
+    private void startPopulateTask(Bundle data) {
         LOG.trace("Entry");
 
         File template = new File(templateFilePath);
+        File outputFolder = new File(outputFolderPath);
 
-        if (template.exists()) {
-            new PopulateTemplateAsyncTask(
-                    template,
-                    OUTPUT_FOLDER,
-                    data,
-                    this
-            ).execute();
+        if (template.exists() && !template.isDirectory()) {
+
+            if (outputFolder.mkdirs() || outputFolder.isDirectory()) {
+
+                new PopulateTemplateAsyncTask(
+                        template,
+                        outputFolder,
+                        data,
+                        this
+                ).execute();
+
+            } else {
+                showToast(R.string.unable_to_create_output_folder);
+            }
+
         } else {
             showToast(R.string.template_does_not_exist);
         }
