@@ -14,7 +14,7 @@ import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
 /**
- * Asynchronous task for populating an ODT file with data.
+ * Asynchronous task for populating a document with data.
  *
  * @author Richard Lu
  */
@@ -28,7 +28,6 @@ public class PopulateTemplateAsyncTask extends AsyncTask<Void, Void, File> {
     }
 
     private static final int BUFFER_SIZE = 1024;
-    private static final String CONTENT_FILE_NAME = "content.xml";
 
     private static final Logger LOG = Logger.create(PopulateTemplateAsyncTask.class);
 
@@ -36,6 +35,8 @@ public class PopulateTemplateAsyncTask extends AsyncTask<Void, Void, File> {
     private final File outputFolder;
     private final Bundle values;
     private final PopulateListener listener;
+
+    private String errorMessage;
 
     public PopulateTemplateAsyncTask(File input, File outputFolder, Bundle values, PopulateListener listener) {
         LOG.trace("Entry, input={}, values={}",
@@ -60,7 +61,7 @@ public class PopulateTemplateAsyncTask extends AsyncTask<Void, Void, File> {
         try {
             result = populate(input, values);
         } catch (Exception e) {
-            listener.onError(e.getMessage());
+            errorMessage = e.getMessage();
         }
 
         LOG.trace("Exit");
@@ -73,36 +74,41 @@ public class PopulateTemplateAsyncTask extends AsyncTask<Void, Void, File> {
 
         if (result != null) {
             listener.onFinished(result);
+        } else {
+            listener.onError(errorMessage);
         }
 
         LOG.trace("Exit");
     }
 
     /**
-     * Populate an input ODT file with attribute keys formatted as {{ attr_key }}
+     * Populate an input document with attribute keys formatted as {{ attr_key }}
      * with attribute values.
      *
      * Sources:
      * http://isip-blog.blogspot.com/2010/04/extracting-xml-files-from-odt-file-in.html
      * http://stackoverflow.com/questions/11502260/modifying-a-text-file-in-a-zip-archive-in-java
      *
-     * @param input ODT file
+     * @param input Document (ODT/DOCX) file
      * @param values Bundle of String attribute key-value mappings
-     * @return Populated ODT file
+     * @return Populated document
      * @throws IOException
      */
     private File populate(File input, Bundle values) throws IOException {
         LOG.trace("Entry");
 
+        // Sans file extension
+        String inputName = input.getName().substring(0, input.getName().lastIndexOf('.'));
+        String inputExtension = Utils.getExtension(input.getName());
+
         File output;
 
-        if (input.getName().endsWith(".odt")) {
+        if (DocTypeEnum.isSupportedExtension(inputExtension)) {
 
-            // Remove file extension
-            String inputName = input.getName().substring(0, input.getName().lastIndexOf('.'));
+            DocTypeEnum docType = DocTypeEnum.getFromExtension(inputExtension);
 
             // Append suffice and file extension to output file name
-            output = new File(outputFolder, inputName + "-out.odt");
+            output = new File(outputFolder, inputName + "-out." + inputExtension);
 
             ZipFile file = new ZipFile(input);
             Enumeration entries = file.entries();
@@ -120,7 +126,7 @@ public class PopulateTemplateAsyncTask extends AsyncTask<Void, Void, File> {
 
                 outputStream.putNextEntry(new ZipEntry(entry.getName()));
 
-                if (entry.getName().equals(CONTENT_FILE_NAME)) {
+                if (entry.getName().equals(docType.CONTENT_FILE_NAME)) {
 
                     // Read entire file as String
                     String fileText = "";
@@ -156,7 +162,7 @@ public class PopulateTemplateAsyncTask extends AsyncTask<Void, Void, File> {
             file.close();
 
         } else {
-            throw new RuntimeException("Not an ODT file");
+            throw new RuntimeException("Not a supported file format");
         }
 
         LOG.trace("Exit");

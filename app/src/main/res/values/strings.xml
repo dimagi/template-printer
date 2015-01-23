@@ -7,7 +7,7 @@
     <string name="no_folder_selected">No folder selected</string>
     <string name="none">None</string>
     <string name="not_a_folder">Not a folder!</string>
-    <string name="not_odt_file">Not an ODT file</string>
+    <string name="not_supported_file_format">Not a supported file format</string>
     <string name="ok">OK</string>
     <string name="output_folder">Output Folder</string>
     <string name="populate_and_print">POPULATE &amp; PRINT</string>

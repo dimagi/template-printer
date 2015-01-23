@@ -21,6 +21,7 @@ import com.nononsenseapps.filepicker.FilePickerActivity;
 import java.io.File;
 import java.util.List;
 
+import richard.chard.lu.android.templateprinter.DocTypeEnum;
 import richard.chard.lu.android.templateprinter.Logger;
 import richard.chard.lu.android.templateprinter.PopulateTemplateAsyncTask;
 import richard.chard.lu.android.templateprinter.R;
@@ -49,8 +50,6 @@ public class MainActivity extends Activity
             "TemplatePrinter"
     );
 
-    private static final String DOCUMENT_VIEWER_PACKAGE = "at.tomtasche.reader";
-
     private String outputFolderPath;
 
     private SharedPreferences preferences;
@@ -70,8 +69,9 @@ public class MainActivity extends Activity
                     && data != null) {
 
                 Uri uri = data.getData();
+                String path = uri.getPath();
 
-                if (uri.getPath().endsWith(".odt")) {
+                if (DocTypeEnum.isSupportedExtension(Utils.getExtension(path))) {
 
                     templateFilePath = uri.getPath();
 
@@ -87,7 +87,7 @@ public class MainActivity extends Activity
                     );
 
                 } else {
-                    showToast(R.string.not_odt_file);
+                    showToast(R.string.not_supported_file_format);
                 }
 
             } else {
@@ -279,46 +279,59 @@ public class MainActivity extends Activity
     }
 
     /**
-     * Attempts to open the file with OpenDocument Reader.
-     * If ODR is unavailable, opens a dialog from which
-     * an ODT reader application can be selected.
+     * Attempts to open the document with its default viewer.
+     * If default viewer is unavailable, opens a dialog from which
+     * a viewer application can be selected.
      *
-     * @param document ODT file to open
+     * @param document Document to open
      */
     private void startDocumentViewer(File document) {
         LOG.trace("Entry");
 
-        PackageManager packageManager = getPackageManager();
-
-        List<ResolveInfo> results = packageManager.queryIntentActivities(
-                new Intent()
-                        .addCategory(Intent.CATEGORY_LAUNCHER)
-                        .setAction(Intent.ACTION_MAIN)
-                ,
-                0
-        );
-
         ComponentName target = null;
 
-        for (ResolveInfo resolveInfo : results) {
-            ActivityInfo activityInfo = resolveInfo.activityInfo;
+        DocTypeEnum docType = DocTypeEnum.getFromExtension(
+                Utils.getExtension(
+                        document.getName()
+                )
+        );
 
-            if (activityInfo.packageName.equals(DOCUMENT_VIEWER_PACKAGE)) {
-                target = new ComponentName(
-                        activityInfo.packageName,
-                        activityInfo.name
-                );
+        String viewerPackage = docType.VIEWER_PACKAGE;
 
-                break;
+        if (viewerPackage != null) {
+
+            PackageManager packageManager = getPackageManager();
+
+            List<ResolveInfo> results = packageManager.queryIntentActivities(
+                    new Intent()
+                            .addCategory(Intent.CATEGORY_LAUNCHER)
+                            .setAction(Intent.ACTION_MAIN)
+                    ,
+                    0
+            );
+
+            for (ResolveInfo resolveInfo : results) {
+                ActivityInfo activityInfo = resolveInfo.activityInfo;
+
+                if (activityInfo.packageName.equals(viewerPackage)) {
+                    target = new ComponentName(
+                            activityInfo.packageName,
+                            activityInfo.name
+                    );
+
+                    break;
+                }
             }
+
         }
 
         Intent intent = new Intent()
-                .setAction(android.content.Intent.ACTION_VIEW)
+                .setAction(Intent.ACTION_VIEW)
                 .setData(Uri.fromFile(document));
 
+        // TODO: office mobile doesn't seem to open?
         if (target == null) {
-            intent.setType("application/*");
+            intent.setType(docType.MIMETYPE);
         } else {
             intent.setComponent(target);
         }

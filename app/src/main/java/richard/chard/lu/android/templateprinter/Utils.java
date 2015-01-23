@@ -13,6 +13,16 @@ public abstract class Utils {
     private static final Logger LOG = Logger.create(Utils.class);
 
     /**
+     * Gets the file extension from the given file path.
+     *
+     * @param path File path
+     * @return File extension
+     */
+    public static String getExtension(String path) {
+        return last(path.split("\\."));
+    }
+
+    /**
      * Concatenate all Strings in a String array to one String.
      *
      * @param strings String array to join
