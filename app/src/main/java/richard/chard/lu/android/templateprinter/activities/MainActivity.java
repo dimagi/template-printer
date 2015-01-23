@@ -11,6 +11,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -35,10 +36,18 @@ public class MainActivity extends Activity
     private static final Logger LOG = Logger.create(MainActivity.class);
 
     private static final String PREFERENCE_KEY_OUTPUT = "output_folder_path";
+    // TODO: load default template as resource
     private static final String PREFERENCE_KEY_TEMPLATE = "template_file_path";
 
     private static final int REQUEST_OUTPUT = 0;
     private static final int REQUEST_TEMPLATE = 1;
+
+    private static final File DEFAULT_OUTPUT_FOLDER = new File(
+            Environment.getExternalStoragePublicDirectory(
+                    Environment.DIRECTORY_DOWNLOADS
+            ),
+            "TemplatePrinter"
+    );
 
     private static final String DOCUMENT_VIEWER_PACKAGE = "at.tomtasche.reader";
 
@@ -173,8 +182,14 @@ public class MainActivity extends Activity
 
         preferences= getPreferences(MODE_PRIVATE);
 
-        outputFolderPath = preferences.getString(PREFERENCE_KEY_OUTPUT, null);
-        templateFilePath = preferences.getString(PREFERENCE_KEY_TEMPLATE, null);
+        outputFolderPath = preferences.getString(
+                PREFERENCE_KEY_OUTPUT,
+                DEFAULT_OUTPUT_FOLDER.getPath()
+        );
+        templateFilePath = preferences.getString(
+                PREFERENCE_KEY_TEMPLATE,
+                null
+        );
 
         setContentView(R.layout.activity_main);
 
