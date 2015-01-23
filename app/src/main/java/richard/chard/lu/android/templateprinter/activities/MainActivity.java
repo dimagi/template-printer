@@ -2,7 +2,6 @@ package richard.chard.lu.android.templateprinter.activities;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -16,6 +15,8 @@ import android.os.Environment;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.nononsenseapps.filepicker.FilePickerActivity;
 
 import java.io.File;
 import java.util.List;
@@ -78,7 +79,7 @@ public class MainActivity extends Activity
 
                 if (uri.getPath().endsWith(".odt")) {
 
-                    templateFilePath = Utils.getFilePathFromUri(uri);
+                    templateFilePath = uri.getPath();
 
                     preferences.edit()
                             .putString(
@@ -284,25 +285,29 @@ public class MainActivity extends Activity
     }
 
     /**
-     * Attempts to start the device's file browser.
-     * If unavailable, shows an error dialog.
+     * Starts the file browser.
      */
     private void startFileBrowser() {
         LOG.trace("Entry");
 
-        Intent chooseTemplateIntent = new Intent()
-                .setAction(Intent.ACTION_GET_CONTENT)
-                .setType("file/*")
-                .addCategory(Intent.CATEGORY_OPENABLE);
+        Intent chooseTemplateIntent = new Intent(
+                this,
+                FilePickerActivity.class
+        ).putExtra(
+                FilePickerActivity.EXTRA_ALLOW_MULTIPLE,
+                false
+        ).putExtra(
+                FilePickerActivity.EXTRA_ALLOW_CREATE_DIR,
+                false
+        ).putExtra(
+                FilePickerActivity.EXTRA_MODE,
+                FilePickerActivity.MODE_FILE
+        );
 
-        try {
-            startActivityForResult(
-                    chooseTemplateIntent,
-                    REQUEST_TEMPLATE
-            );
-        } catch (ActivityNotFoundException e) {
-            showErrorDialog(R.string.file_browser_not_found);
-        }
+        startActivityForResult(
+                chooseTemplateIntent,
+                REQUEST_TEMPLATE
+        );
 
         LOG.trace("Exit");
     }

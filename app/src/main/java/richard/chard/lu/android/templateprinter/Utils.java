@@ -13,20 +13,6 @@ public abstract class Utils {
     private static final Logger LOG = Logger.create(Utils.class);
 
     /**
-     * Convert URI to absolute file path.
-     * @param uri File URI
-     * @return File path String
-     */
-    public static String getFilePathFromUri(Uri uri) {
-        LOG.trace("Entry, uri={}", uri);
-
-        String result = last(uri.getPath().split("//"));
-
-        LOG.trace("Exit, result={}", result);
-        return result;
-    }
-
-    /**
      * Concatenate all Strings in a String array to one String.
      *
      * @param strings String array to join
