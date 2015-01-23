@@ -32,7 +32,6 @@ public class MainActivity extends Activity
         implements PopulateTemplateAsyncTask.PopulateListener, DialogInterface.OnClickListener,
         View.OnClickListener {
 
-
     private static final Logger LOG = Logger.create(MainActivity.class);
 
     // TODO: no downloads folder?
