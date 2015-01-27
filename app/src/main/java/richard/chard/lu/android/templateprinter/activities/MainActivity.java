@@ -2,24 +2,20 @@ package richard.chard.lu.android.templateprinter.activities;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.ComponentName;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.ActivityInfo;
-import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.view.View;
+import android.webkit.MimeTypeMap;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.nononsenseapps.filepicker.FilePickerActivity;
 
 import java.io.File;
-import java.util.List;
 
 import richard.chard.lu.android.templateprinter.DocTypeEnum;
 import richard.chard.lu.android.templateprinter.Logger;
@@ -286,55 +282,22 @@ public class MainActivity extends Activity
      * @param document Document to open
      */
     private void startDocumentViewer(File document) {
-        LOG.trace("Entry");
+        LOG.trace("Entry, document={}", document);
 
-        ComponentName target = null;
+        Uri uri = Uri.fromFile(document);
 
-        DocTypeEnum docType = DocTypeEnum.getFromExtension(
-                Utils.getExtension(
-                        document.getName()
+        String type = MimeTypeMap.getSingleton().getMimeTypeFromExtension(
+                MimeTypeMap.getFileExtensionFromUrl(
+                        uri.toString()
                 )
         );
 
-        String viewerPackage = docType.VIEWER_PACKAGE;
-
-        if (viewerPackage != null) {
-
-            PackageManager packageManager = getPackageManager();
-
-            List<ResolveInfo> results = packageManager.queryIntentActivities(
-                    new Intent()
-                            .addCategory(Intent.CATEGORY_LAUNCHER)
-                            .setAction(Intent.ACTION_MAIN)
-                    ,
-                    0
-            );
-
-            for (ResolveInfo resolveInfo : results) {
-                ActivityInfo activityInfo = resolveInfo.activityInfo;
-
-                if (activityInfo.packageName.equals(viewerPackage)) {
-                    target = new ComponentName(
-                            activityInfo.packageName,
-                            activityInfo.name
-                    );
-
-                    break;
-                }
-            }
-
-        }
-
         Intent intent = new Intent()
                 .setAction(Intent.ACTION_VIEW)
-                .setData(Uri.fromFile(document));
-
-        // TODO: office mobile doesn't seem to open?
-        if (target == null) {
-            intent.setType(docType.MIMETYPE);
-        } else {
-            intent.setComponent(target);
-        }
+                .setDataAndType(
+                        uri,
+                        type == null ? "*/*" : type
+                );
 
         startActivity(intent);
 

@@ -5,12 +5,12 @@ package richard.chard.lu.android.templateprinter;
  */
 public enum DocTypeEnum {
 
-    DOCX("docx", "word/document.xml", null, "application/msword"),
-    ODT("odt", "content.xml", "at.tomtasche.reader", "application/*");
+    DOCX("word/document.xml"),
+    ODT("content.xml");
 
     public static DocTypeEnum getFromExtension(String extension) {
         for (DocTypeEnum docType : DocTypeEnum.values()) {
-            if (docType.EXTENSION.equals(extension)) {
+            if (docType.toString().equalsIgnoreCase(extension)) {
                 return docType;
             }
         }
@@ -22,15 +22,9 @@ public enum DocTypeEnum {
     }
 
     public final String CONTENT_FILE_NAME;
-    public final String EXTENSION;
-    public final String MIMETYPE;
-    public final String VIEWER_PACKAGE;
 
-    private DocTypeEnum(String extension, String contentFileName, String viewerPackage, String mimeType) {
+    private DocTypeEnum(String contentFileName) {
         this.CONTENT_FILE_NAME = contentFileName;
-        this.EXTENSION = extension;
-        this.MIMETYPE = mimeType;
-        this.VIEWER_PACKAGE = viewerPackage;
     }
 
 }
